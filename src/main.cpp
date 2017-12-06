@@ -1167,7 +1167,7 @@ public:
 	                    M->translate(vec3(0, -.07, 1.05));
 
 	                    if (powerKick) {
-	                    	kickRot += .5;
+	                    	kickRot += 1.f;
 	                    	// powering kick
 	                    	if (kickRot < 350.f) {
 	                    		M->rotate(radians(-limbRot + kickRot) / 5.f, vec3(0, 1, 0));
@@ -1175,7 +1175,6 @@ public:
 	                    }
 	                    else {
 	                    	kickRot = 0.f;
-
 	                    	//rotate the hip joint
 	                    	M->rotate(radians(-limbRot), vec3(0, 1, 0));
 	                    }	                  
@@ -1205,7 +1204,7 @@ public:
 	                    M->translate(vec3(0, -.07, 1.05));
 	                    	                    
 	                    if (powerKick) {
-	                    	kickRot += .5;
+	                    	kickRot += 1.f;
 	                    	// powering kick
 	                    	if (kickRot < 350.f) {
 	                    		M->rotate(radians(-limbRot + kickRot) / 5.f, vec3(0, 1, 0));
@@ -1218,17 +1217,7 @@ public:
 	                    }	              
 	    
 	                    //move hip joint to origin
-	                    M->translate(vec3(0, .07, -1.05));
-
-	                    /*
-	                    if (powerKick) {
-	                    	kickRot += .5;
-	                    	// powering kick
-	                    	M->rotate(radians(-limbRot + kickRot + 5.f), vec3(0, 1, 0));
-	                    }
-	                    else {
-	                    	kickRot = 0.f;
-	                    }*/            
+	                    M->translate(vec3(0, .07, -1.05));         
 
 	                    M->scale(gDummyScale);
 
@@ -1252,16 +1241,13 @@ public:
 	                    M->rotate(radians(-limbRot), vec3(0, 1, 0));
 
 	                    if (powerKick) {
-	                    	kickRot += .5;
+	                    	kickRot += 1.f;
 	                    	// powering kick
 
 	                    	if (kickRot < 350.f) {
 	                    		M->rotate(radians(-limbRot + kickRot) / 5.f, vec3(0, 1, 0));
 	                    	}	               
-	                    }
-	                    else {
-	                    	kickRot = 0.f;
-	                    }
+	                    }	                  
 	    
 	                    //move hip joint to origin
 	                    M->translate(vec3(0, .07, -1.05));
@@ -1327,8 +1313,6 @@ public:
 			M->pushMatrix();
 				M->loadIdentity();
 				M->rotate(radians(cTheta), vec3(0, 1, 0));
-
-				bool collision = CheckCollision(*Ball, *Foot);
 					
 				Ball->currentSpeed = Player->currentSpeed;
 				Ball->currentTurnSpeed = Player->currentTurnSpeed;
@@ -1337,27 +1321,37 @@ public:
 				if (GetDistance(*Foot, *Ball) <= (Foot->Radius + Ball->Radius + 1) && powerKick) {
 
 					if (releaseKick) {
-						if (kickPower >= 0.0) {
-							// move in the direction the player is pointing
-							Ball->Position.x += 10.f * Player->deltaX;
-					    	Ball->Position.z += 10.f * Player->deltaZ;
-
-					    	kickPower -= 1.0;
-						}
-
 						ballMoving = true;
 
-						// reset kick
-						releaseKick = false;
+						if (kickPower >= 0.0) {
+							cout << "Kick Power: " << kickPower << endl << endl;
+							// move in the direction the player is pointing
+							Ball->Position.x += 1.5f * Player->deltaX;
+					    	Ball->Position.z += 1.5f * Player->deltaZ;
 
-						powerKick = false;
+					    	kickPower -= 2.0;	
 
-						kickPower = 0.f;
+							/*if (ballMoving) {
+								ballZRot += 10.f;	
+
+								M->rotate(radians(ballZRot), vec3(1, 0, 0));
+							}*/
+						}
+						else {
+							// reset kick
+							releaseKick = false;
+
+							powerKick = false;
+
+							kickPower = 0.f;
+						}
 					}
 					else {
 						ballMoving = false;
 					}
 				}
+
+				bool collision = CheckCollision(*Ball, *Foot);
 
 				// collision detected
 				if (collision) {
@@ -1368,7 +1362,9 @@ public:
 					ballMoving = true;
 				}
 				else {
-					ballMoving = false;
+					if (! releaseKick) {
+						ballMoving = false;
+					}
 				}
 			
 
@@ -1377,7 +1373,7 @@ public:
 					//h is the stepsize
 					//ballVelocity is initialized to the view vector when first thrown
 					
-					ballVelocity += + h/m * f;
+					ballVelocity += h/m * f;
 					//ballPos is initialized to the eye vector when first thrown
 
 					while (ballPos < kickedPos) {
