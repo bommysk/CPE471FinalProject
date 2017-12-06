@@ -147,7 +147,6 @@ public:
 	float limbRot = 0.0;
 	bool leftArmUp = false;
 
-	float ballXRot = 0.0;
 	float ballZRot = 0.0;
 
 	//transforms for the world
@@ -195,6 +194,10 @@ public:
 
 	const float RUN_SPEED = 10.f;
 	const float TURN_SPEED = 10.f;
+
+	float kickPower = 0.f;
+	bool powerKick = false;
+	bool releaseKick = false;
 
 	GLuint vbo;
 	GLuint vao;
@@ -273,7 +276,7 @@ public:
 		{
 			dummyMoving = false;
 
-			Player->currentTurnSpeed = 0.f;
+			Player->currentSpeed = 0.f;
 		}
 		else if (key == GLFW_KEY_J && action == GLFW_REPEAT) 
 		{
@@ -302,6 +305,18 @@ public:
 			Player->currentTurnSpeed = 0.f;
 
 			dummyMoving = false;
+		}
+		else if (key == GLFW_KEY_SPACE && action == GLFW_REPEAT) 
+		{
+			powerKick = true;
+
+			kickPower += 1.f;
+		}
+		else if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE) 
+		{
+			//powerKick = false;
+
+			releaseKick = true;
 		}
 	}
 
@@ -1167,13 +1182,31 @@ public:
 						dummy = DummyShapes[16];
 						dummy->draw(prog);
 
+						dummy = DummyShapes[25];
+						dummy->draw(prog);
+
+	                M->popMatrix();
+
+	                // lower right leg for kicking
+	                M->pushMatrix();
+
+	                    //move back to hip
+	                    M->translate(vec3(0, -.07, 1.05));
+	                    
+	                    //rotate the hip joint
+	                    M->rotate(radians(-limbRot), vec3(0, 1, 0));
+	    
+	                    //move hip joint to origin
+	                    M->translate(vec3(0, .07, -1.05));
+	                    M->scale(gDummyScale);
+
+	                    glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(M->topMatrix()));
+
+						// lower leg for kicking
 						dummy = DummyShapes[19];
 						dummy->draw(prog);
 	                    
 	                    dummy = DummyShapes[20];
-						dummy->draw(prog);
-
-						dummy = DummyShapes[25];
 						dummy->draw(prog);
 
 						dummy = DummyShapes[26];
@@ -1230,37 +1263,58 @@ public:
 				M->rotate(radians(cTheta), vec3(0, 1, 0));
 
 				bool collision = CheckCollision(*Ball, *Foot);
-				
+					
+				Ball->currentSpeed = Player->currentSpeed;
+				Ball->currentTurnSpeed = Player->currentTurnSpeed;
+
+				// close to the ball but not dribbling it / not colliding with it
+				if (GetDistance(*Foot, *Ball) <= (Foot->Radius + Ball->Radius + 1) && powerKick) {
+
+					if (releaseKick) {
+						KickBall(*Player, *Ball, kickPower);
+
+						// reset kick
+						releaseKick = false;
+
+						powerKick = false;
+
+						kickPower = 0.f;
+					}
+				}
+
+				// collision detected
 				if (collision) {
-					cout << "COLLISION" << endl << endl;
-
-					Ball->currentSpeed = Player->currentSpeed;
-					Ball->currentTurnSpeed = Player->currentTurnSpeed;
-
+					// change the position as the player's position changes upon collision
 					Ball->Position.x += Player->deltaX;
 					Ball->Position.z += Player->deltaZ;
 				}
-
+			
 
 				/*
-				if(ball_moving){
-		         //h is the stepsize
-		                  //ballVelocity is initialized to the view vector when first thrown
-		         ballVelocity += + h/m * f;
-		                  //ballPos is initialized to the eye vector when first thrown
-		         ballPos += h * ballVelocity;
+				if (ballKicked) {
+					//h is the stepsize
+					//ballVelocity is initialized to the view vector when first thrown
+					
+					ballVelocity += + h/m * f;
+					//ballPos is initialized to the eye vector when first thrown
 
-		                  //if the ball touches the ground, make it stop moving
-		                  if(touchingGround(ballPos)){
-		                      ball_moving = false;
-		                      fetch = true;
-		                  }
+					while (ballPos < kickedPos) {
+						ballPos += h * ballVelocity;
+					}
 		      	}
-		      */
+		      	*/
 
 				// add collision detection
 
 				M->translate(vec3(Ball->Position.x, -.7, Ball->Position.z));
+
+				/*
+				if (collision) {
+					//rotate the ball on collision
+					ballZRot += 10.f;
+	                M->rotate(radians(ballZRot), vec3(0, 1, 0));
+				}
+				*/
 
 				M->scale(gDScale * .3);
 				//M->translate(-1.0f * gDTrans);
@@ -1354,6 +1408,28 @@ public:
 		float distance = sqrt(dx*dx + dy*dy + dz*dz);
 
 		return distance <= (one.Radius + two.Radius);
+	}
+
+	bool GetDistance(GameObject &one, GameObject &two) // AABB - Circle collision
+	{
+	    float dx = one.Position.x - two.Position.x;
+		float dy = one.Position.y - two.Position.y;
+		float dz = one.Position.z - two.Position.z;
+
+		float distance = sqrt(dx*dx + dy*dy + dz*dz);
+
+		return distance;
+	}
+	
+	void KickBall(GameObject &player, GameObject &ball, float kickPower)
+	{
+		while (kickPower >= 0.0) {
+			// move in the direction the player is pointing
+			ball.Position.x += player.deltaX;
+	    	ball.Position.z += player.deltaZ;
+
+	    	kickPower -= 1.0;
+		}
 	}
 
 	// helper function to set materials for shading
