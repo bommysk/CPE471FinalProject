@@ -192,6 +192,8 @@ public:
 	GameObject *Ball = new GameObject();
 	GameObject *Player = new GameObject();
 	GameObject *Foot = new GameObject();
+	GameObject *GoldGoal = new GameObject();
+	GameObject *BlueGoal = new GameObject();
 
 	const float RUN_SPEED = 10.f;
 	const float TURN_SPEED = 10.f;
@@ -559,6 +561,30 @@ public:
 			{
 				gGoalScale = 2.0 / (maxGoalVec.z - minGoalVec.z);
 			}
+
+			//vec3 goalCenter = vec3(minGoalVec.x + ((maxGoalVec.x - minGoalVec.x) / 2.0), minGoalVec.y + ((maxGoalVec.y - minGoalVec.y) / 2.0), minGoalVec.z + ((maxGoalVec.z - minGoalVec.z) / 2.0));
+
+			vec3 goldGoalCenter = vec3(-6.0, .4, -1.9);
+
+			GoldGoal->Position.x = goldGoalCenter.x;
+			GoldGoal->Position.y = goldGoalCenter.y;
+			GoldGoal->Position.z = goldGoalCenter.z;
+
+			//cout << "min goal x: " << minGoalVec.x << endl << endl;
+
+			//cout << "Gold Goal Center: " << GoldGoal->Position.x << ", " << GoldGoal->Position.y << ", " << GoldGoal->Position.z << endl << endl; 
+
+			GoldGoal->Radius = 3.f;
+
+			vec3 blueGoalCenter = vec3(16.0, .4, -1.9);
+
+			BlueGoal->Position.x = blueGoalCenter.x;
+			BlueGoal->Position.y = blueGoalCenter.y;
+			BlueGoal->Position.z = blueGoalCenter.z;
+
+		    //cout << "Gold Goal Center: " << BlueGoal->Position.x << ", " << BlueGoal->Position.y << ", " << BlueGoal->Position.z << endl << endl; 
+
+			BlueGoal->Radius = 3.f;
 		}
 
 		//load in the mesh and make the shapes
@@ -694,7 +720,7 @@ public:
 		Foot->Position.x += 1;
 		Foot->Position.z -= 1;
 
-		Foot->Radius = 2.0 * (gDummyScale * (dummyRightFoot->max.x - dummyRightFoot->min.x)) / 2.0; 
+		Foot->Radius = (gDummyScale * (dummyRightFoot->max.x - dummyRightFoot->min.x)); 
 
 		// Initialize the geometry to render a ground plane
 		initQuad();
@@ -1317,25 +1343,21 @@ public:
 				Ball->currentSpeed = Player->currentSpeed;
 				Ball->currentTurnSpeed = Player->currentTurnSpeed;
 
+				bool collision = CheckCollision(*Ball, *Foot);
+
 				// close to the ball but not dribbling it / not colliding with it
 				if (GetDistance(*Foot, *Ball) <= (Foot->Radius + Ball->Radius + 1) && powerKick) {
 
 					if (releaseKick) {
+
 						ballMoving = true;
 
 						if (kickPower >= 0.0) {
-							cout << "Kick Power: " << kickPower << endl << endl;
 							// move in the direction the player is pointing
 							Ball->Position.x += 1.5f * Player->deltaX;
 					    	Ball->Position.z += 1.5f * Player->deltaZ;
 
 					    	kickPower -= 2.0;	
-
-							/*if (ballMoving) {
-								ballZRot += 10.f;	
-
-								M->rotate(radians(ballZRot), vec3(1, 0, 0));
-							}*/
 						}
 						else {
 							// reset kick
@@ -1343,15 +1365,13 @@ public:
 
 							powerKick = false;
 
-							kickPower = 0.f;
+							kickPower = 0.f;						
 						}
 					}
 					else {
 						ballMoving = false;
 					}
 				}
-
-				bool collision = CheckCollision(*Ball, *Foot);
 
 				// collision detected
 				if (collision) {
@@ -1366,21 +1386,6 @@ public:
 						ballMoving = false;
 					}
 				}
-			
-
-				/*
-				if (ballKicked) {
-					//h is the stepsize
-					//ballVelocity is initialized to the view vector when first thrown
-					
-					ballVelocity += h/m * f;
-					//ballPos is initialized to the eye vector when first thrown
-
-					while (ballPos < kickedPos) {
-						ballPos += h * ballVelocity;
-					}
-		      	}
-		      	*/
 
 				// add collision detection
 
@@ -1452,6 +1457,17 @@ public:
 
 		P->popMatrix();
 
+		bool goldGoalCollison = CheckCollision(*Ball, *GoldGoal);
+		bool blueGoalCollison = CheckCollision(*Ball, *BlueGoal);
+
+		if (goldGoalCollison) {
+			cout << "Gold Goal Collision" << endl << endl;
+		}
+
+		if (blueGoalCollison) {
+			cout << "Blue Goal Collision" << endl << endl;
+		}
+
 
 		if (dummyMoving) {
 			if (limbRot > 20) {
@@ -1477,6 +1493,11 @@ public:
 
 	bool CheckCollision(GameObject &one, GameObject &two) // AABB - Circle collision
 	{
+
+		//cout << "ball x: " << one.Position.x << endl << endl;
+		//cout << "ball y: " << one.Position.y << endl << endl;
+		//cout << "ball z: " << one.Position.z << endl << endl;
+
 	    float dx = one.Position.x - two.Position.x;
 		float dy = one.Position.y - two.Position.y;
 		float dz = one.Position.z - two.Position.z;
