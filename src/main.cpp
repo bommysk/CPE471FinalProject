@@ -145,6 +145,7 @@ public:
 	float gDummyScale = 1.0;
 
 	float limbRot = 0.0;
+	float kickRot = 0.0;
 	bool leftArmUp = false;
 
 	float ballZRot = 0.0;
@@ -204,7 +205,7 @@ public:
 	GLuint texture_cube;
 	GLuint* cube_texture = &texture_cube;
 
-	bool changeCubeTexture = false;
+	bool ballMoving = false;
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
@@ -310,12 +311,10 @@ public:
 		{
 			powerKick = true;
 
-			kickPower += 1.f;
+			kickPower += 5.f;
 		}
 		else if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE) 
 		{
-			//powerKick = false;
-
 			releaseKick = true;
 		}
 	}
@@ -1166,12 +1165,24 @@ public:
 
 	                    //move back to hip
 	                    M->translate(vec3(0, -.07, 1.05));
-	                    
-	                    //rotate the hip joint
-	                    M->rotate(radians(-limbRot), vec3(0, 1, 0));
+
+	                    if (powerKick) {
+	                    	kickRot += .5;
+	                    	// powering kick
+	                    	if (kickRot < 350.f) {
+	                    		M->rotate(radians(-limbRot + kickRot) / 5.f, vec3(0, 1, 0));
+	                    	}
+	                    }
+	                    else {
+	                    	kickRot = 0.f;
+
+	                    	//rotate the hip joint
+	                    	M->rotate(radians(-limbRot), vec3(0, 1, 0));
+	                    }	                  
 	    
 	                    //move hip joint to origin
 	                    M->translate(vec3(0, .07, -1.05));
+
 	                    M->scale(gDummyScale);
 
 	                    glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(M->topMatrix()));
@@ -1192,12 +1203,33 @@ public:
 
 	                    //move back to hip
 	                    M->translate(vec3(0, -.07, 1.05));
-	                    
-	                    //rotate the hip joint
-	                    M->rotate(radians(-limbRot), vec3(0, 1, 0));
+	                    	                    
+	                    if (powerKick) {
+	                    	kickRot += .5;
+	                    	// powering kick
+	                    	if (kickRot < 350.f) {
+	                    		M->rotate(radians(-limbRot + kickRot) / 5.f, vec3(0, 1, 0));
+	                    	}
+	                    }
+	                    else {
+	                    	kickRot = 0.f;
+
+	                    	M->rotate(radians(-limbRot), vec3(0, 1, 0));
+	                    }	              
 	    
 	                    //move hip joint to origin
 	                    M->translate(vec3(0, .07, -1.05));
+
+	                    /*
+	                    if (powerKick) {
+	                    	kickRot += .5;
+	                    	// powering kick
+	                    	M->rotate(radians(-limbRot + kickRot + 5.f), vec3(0, 1, 0));
+	                    }
+	                    else {
+	                    	kickRot = 0.f;
+	                    }*/            
+
 	                    M->scale(gDummyScale);
 
 	                    glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(M->topMatrix()));
@@ -1208,6 +1240,40 @@ public:
 	                    
 	                    dummy = DummyShapes[20];
 						dummy->draw(prog);
+	                M->popMatrix();
+
+	                // lower right foot for kicking
+	                M->pushMatrix();
+
+	                    //move back to hip
+	                    M->translate(vec3(0, -.07, 1.05));
+	                    
+	                    //rotate the hip joint
+	                    M->rotate(radians(-limbRot), vec3(0, 1, 0));
+
+	                    if (powerKick) {
+	                    	kickRot += .5;
+	                    	// powering kick
+
+	                    	if (kickRot < 350.f) {
+	                    		M->rotate(radians(-limbRot + kickRot) / 5.f, vec3(0, 1, 0));
+	                    	}	               
+	                    }
+	                    else {
+	                    	kickRot = 0.f;
+	                    }
+	    
+	                    //move hip joint to origin
+	                    M->translate(vec3(0, .07, -1.05));
+
+	                    if (powerKick) {
+	                    	
+	                   		M->rotate(radians(15.f), vec3(0, 1, 0));	                    	
+	                    }             
+
+	                    M->scale(gDummyScale);
+
+	                    glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(M->topMatrix()));
 
 						dummy = DummyShapes[26];
 						dummy->draw(prog);
@@ -1271,7 +1337,15 @@ public:
 				if (GetDistance(*Foot, *Ball) <= (Foot->Radius + Ball->Radius + 1) && powerKick) {
 
 					if (releaseKick) {
-						KickBall(*Player, *Ball, kickPower);
+						if (kickPower >= 0.0) {
+							// move in the direction the player is pointing
+							Ball->Position.x += 10.f * Player->deltaX;
+					    	Ball->Position.z += 10.f * Player->deltaZ;
+
+					    	kickPower -= 1.0;
+						}
+
+						ballMoving = true;
 
 						// reset kick
 						releaseKick = false;
@@ -1280,6 +1354,9 @@ public:
 
 						kickPower = 0.f;
 					}
+					else {
+						ballMoving = false;
+					}
 				}
 
 				// collision detected
@@ -1287,6 +1364,11 @@ public:
 					// change the position as the player's position changes upon collision
 					Ball->Position.x += Player->deltaX;
 					Ball->Position.z += Player->deltaZ;
+
+					ballMoving = true;
+				}
+				else {
+					ballMoving = false;
 				}
 			
 
@@ -1308,13 +1390,11 @@ public:
 
 				M->translate(vec3(Ball->Position.x, -.7, Ball->Position.z));
 
-				/*
-				if (collision) {
-					//rotate the ball on collision
-					ballZRot += 10.f;
-	                M->rotate(radians(ballZRot), vec3(0, 1, 0));
+				if (ballMoving) {
+					ballZRot += 10.f;	
 				}
-				*/
+				
+	            M->rotate(radians(ballZRot), vec3(1, 0, 0));
 
 				M->scale(gDScale * .3);
 				//M->translate(-1.0f * gDTrans);
@@ -1419,17 +1499,6 @@ public:
 		float distance = sqrt(dx*dx + dy*dy + dz*dz);
 
 		return distance;
-	}
-	
-	void KickBall(GameObject &player, GameObject &ball, float kickPower)
-	{
-		while (kickPower >= 0.0) {
-			// move in the direction the player is pointing
-			ball.Position.x += player.deltaX;
-	    	ball.Position.z += player.deltaZ;
-
-	    	kickPower -= 1.0;
-		}
 	}
 
 	// helper function to set materials for shading
