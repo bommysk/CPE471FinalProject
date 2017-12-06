@@ -19,7 +19,6 @@
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/transform.hpp>
 
 using namespace std;
 using namespace glm;
@@ -32,6 +31,7 @@ class GameObject
 	    float Radius, RotX = 0.f, RotY = 0.f, RotZ = 0.f;
 	    float currentSpeed = 0.f;
 	    float currentTurnSpeed = 0.f;
+	    float deltaX, deltaZ;
 	    
 	    // Constructor(s)
 	    GameObject() {
@@ -51,21 +51,22 @@ class GameObject
 
 	    // Methods(s)
 
-	    void Move() {
+	    vec3 Move() {
 	    	// DisplayManager.getFrameTimeSeconds()
-	    	//cout << "RotY Before: " << this->RotY << endl << endl;
-	    	//cout << "Current Turn Speed: " << this->currentTurnSpeed << endl << endl;
 		    IncreaseRotation(0, this->currentTurnSpeed, 0);
-		    //cout << "RotY After: " << this->RotY << endl << endl;
-		    float distance = this->currentSpeed * .05;
+		    
+		    float distance = this->currentSpeed * .01;
 
 		    float dx = distance * cos(radians(this->RotY));
 		    float dz = distance * sin(radians(this->RotY));
 
-		    //cout << "dx: " << dx << endl << endl;
-		    //cout << "dz: " << dz << endl << endl;
+		    this->deltaX = dx;
+		    this->deltaZ = dz;
 
 		    IncreasePosition(dx, 0.f, dz);
+
+		    // returning the position to set the position for foot
+		    return this->Position;
         }
 
         void IncreaseRotation(float rotdx, float rotdy, float rotdz) {
@@ -131,7 +132,6 @@ public:
 	shared_ptr<Texture> texture0;
  	shared_ptr<Texture> texture1;
  	shared_ptr<Texture> texture2;
- 	shared_ptr<Texture> cabinTexture;
 
 	int gMat = 0;
 
@@ -251,17 +251,9 @@ public:
 		{
 			dummyMoving = true;
 
-			Foot->Position.x += .1;
-
 			Player->currentSpeed = RUN_SPEED;
 
-			cout << "Mouse Press Current Speed: " << Player->currentSpeed << endl << endl;			
-
-			cout << "Position Before: " << Player->Position.x << endl << endl;
-
-			Player->Move();
-
-			cout << "Position After: " << Player->Position.x << endl << endl;
+			Foot->Position = Player->Move();
 		}
 		else if (key == GLFW_KEY_I && action == GLFW_RELEASE) 
 		{
@@ -275,9 +267,7 @@ public:
 
 			Player->currentSpeed = -RUN_SPEED;
 
-			Foot->Position.x -= .1;
-
-			Player->Move();
+			Foot->Position = Player->Move();
 		}
 		else if (key == GLFW_KEY_K && action == GLFW_RELEASE) 
 		{
@@ -291,7 +281,7 @@ public:
 
 			Player->currentTurnSpeed = -TURN_SPEED;
 
-			Player->Move();
+			Foot->Position = Player->Move();
 		}
 		else if (key == GLFW_KEY_J && action == GLFW_RELEASE) 
 		{
@@ -305,7 +295,7 @@ public:
 
 			Player->currentTurnSpeed = TURN_SPEED;
 
-			Player->Move();
+			Foot->Position = Player->Move();
 		}
 		else if (key == GLFW_KEY_L && action == GLFW_RELEASE) 
 		{
@@ -355,12 +345,6 @@ public:
 		texture0->init();
 		texture0->setUnit(0);
 		texture0->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-
-		cabinTexture = make_shared<Texture>();
-		cabinTexture->setFilename(resourceDirectory + "/Cottage_Texture.jpg");
-		cabinTexture->init();
-		cabinTexture->setUnit(3);
-		cabinTexture->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
 		texture1 = make_shared<Texture>();
 		texture1->setFilename(resourceDirectory + "/soccer_texture.jpg");
@@ -700,7 +684,6 @@ public:
 
 		// Initialize the geometry to render a ground plane
 		initQuad();
-
 
 		float points[] = {
 		  -50.0f,  50.0f, -50.0f,
@@ -1247,24 +1230,33 @@ public:
 				M->rotate(radians(cTheta), vec3(0, 1, 0));
 
 				bool collision = CheckCollision(*Ball, *Foot);
-				float zDiff = Ball->Position.z - Foot->Position.z;
-				float xDiff = Ball->Position.x - Foot->Position.x;
+				
+				if (collision) {
+					cout << "COLLISION" << endl << endl;
+
+					Ball->currentSpeed = Player->currentSpeed;
+					Ball->currentTurnSpeed = Player->currentTurnSpeed;
+
+					Ball->Position.x += Player->deltaX;
+					Ball->Position.z += Player->deltaZ;
+				}
+
 
 				/*
 				if(ball_moving){
-				         //h is the stepsize
-				                  //ballVelocity is initialized to the view vector when first thrown
-				         ballVelocity += + h/m * f;
-				                  //ballPos is initialized to the eye vector when first thrown
-				         ballPos += h * ballVelocity;
+		         //h is the stepsize
+		                  //ballVelocity is initialized to the view vector when first thrown
+		         ballVelocity += + h/m * f;
+		                  //ballPos is initialized to the eye vector when first thrown
+		         ballPos += h * ballVelocity;
 
-				                  //if the ball touches the ground, make it stop moving
-				                  if(touchingGround(ballPos)){
-				                      ball_moving = false;
-				                      fetch = true;
-				                  }
-				      }
-				      */
+		                  //if the ball touches the ground, make it stop moving
+		                  if(touchingGround(ballPos)){
+		                      ball_moving = false;
+		                      fetch = true;
+		                  }
+		      	}
+		      */
 
 				// add collision detection
 
