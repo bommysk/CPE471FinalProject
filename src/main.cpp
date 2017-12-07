@@ -1,8 +1,5 @@
 /**
- * Base code
- * Draws two meshes and one ground plane, one mesh has textures, as well
- * as ground plane.
- * Must be fixed to load in mesh with multiple shapes (goal.obj)
+Shubham Kahal Final Project CPE 471
  */
 
 #include <iostream>
@@ -132,7 +129,6 @@ public:
 	//three different textures
 	shared_ptr<Texture> texture0;
  	shared_ptr<Texture> texture1;
- 	shared_ptr<Texture> texture2;
 
 	int gMat = 0;
 
@@ -368,12 +364,6 @@ public:
 		texture1->init();
 		texture1->setUnit(1);
 		texture1->setWrapModes(GL_REPEAT, GL_REPEAT);
-
-		texture2 = make_shared<Texture>();
-		texture2->setFilename(resourceDirectory + "/mars.jpg");
-		texture2->init();
-		texture2->setUnit(2);
-		texture2->setWrapModes(GL_REPEAT, GL_REPEAT);
 	}
 
 	//code to set up the two shaders - a diffuse shader and texture mapping
@@ -474,7 +464,7 @@ public:
 	{
 		// Load geometry
 		// Some obj files contain material information.
-		// We'll ignore them for this assignment.
+		// We'll ignore them.
 		// this is the tiny obj shapes - not to be confused with our shapes
 		vector<tinyobj::shape_t> TOshapes;
 		vector<tinyobj::material_t> objMaterials;
@@ -497,15 +487,6 @@ public:
 
 			for (size_t i = 0; i < TOshapes.size(); i++)
 			{
-				// TODO -- Initialize each mesh
-				// 1. make a shared pointer
-				// 2. createShape for each tiny obj shape
-				// 3. measure each shape to find out its AABB
-				// 4. call init on each shape to create the GPU data
-				// perform some record keeping to keep track of global min and max
-
-				// Add the shape to AllShapes
-
 				goal = make_shared<Shape>();
 				goal->createShape(TOshapes[i]);
 				goal->measure();
@@ -644,10 +625,7 @@ public:
 					minDummyVec.z = dummy->min.z;
 				}
 			}
-
-			// think about scale and translate....
-			// based on the results of calling measure on each piece
-
+			
 			// compute its transforms based on measuring it
 			gDummyTrans = minDummyVec + 0.5f * (maxDummyVec - minDummyVec);
 			
@@ -1065,7 +1043,7 @@ public:
 				
 				M->rotate(radians(-90.f), vec3(1, 0, 0));
 				
-				SetMaterial(3, prog);
+				SetMaterial(5, prog);
 
 				//dummy model notes: 
 			    //dummy is 29 shapes
@@ -1429,7 +1407,6 @@ public:
 					M->translate(vec3(5, 0.f, -2));
 					M->scale(gDScale * .7);
 					M->translate(-1.0f * gDTrans);
-					texture2->bind(texProg1->getUniform("Texture0"));
 				glUniformMatrix4fv(texProg1->getUniform("M"), 1, GL_FALSE,value_ptr(M->topMatrix()));
 
 				/*draw the ground */
