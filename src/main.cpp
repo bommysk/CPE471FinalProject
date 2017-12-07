@@ -563,17 +563,12 @@ public:
 				gGoalScale = 2.0 / (maxGoalVec.z - minGoalVec.z);
 			}
 
-			//vec3 goalCenter = vec3(minGoalVec.x + ((maxGoalVec.x - minGoalVec.x) / 2.0), minGoalVec.y + ((maxGoalVec.y - minGoalVec.y) / 2.0), minGoalVec.z + ((maxGoalVec.z - minGoalVec.z) / 2.0));
-
+			// manually set goal bounding sphere
 			vec3 goldGoalCenter = vec3(-6.0, .4, -1.9);
 
 			GoldGoal->Position.x = goldGoalCenter.x;
 			GoldGoal->Position.y = goldGoalCenter.y;
 			GoldGoal->Position.z = goldGoalCenter.z;
-
-			//cout << "min goal x: " << minGoalVec.x << endl << endl;
-
-			//cout << "Gold Goal Center: " << GoldGoal->Position.x << ", " << GoldGoal->Position.y << ", " << GoldGoal->Position.z << endl << endl; 
 
 			GoldGoal->Radius = 1.f;
 
@@ -582,8 +577,6 @@ public:
 			BlueGoal->Position.x = blueGoalCenter.x;
 			BlueGoal->Position.y = blueGoalCenter.y;
 			BlueGoal->Position.z = blueGoalCenter.z;
-
-		    //cout << "Gold Goal Center: " << BlueGoal->Position.x << ", " << BlueGoal->Position.y << ", " << BlueGoal->Position.z << endl << endl; 
 
 			BlueGoal->Radius = 1.f;
 		}
@@ -1490,6 +1483,8 @@ public:
 				M->translate(vec3(-6.0, 2.0, -1.9));
 				
 				M->rotate(radians(-90.f), vec3(0, 1, 0));
+
+				M->scale(3.f);
 				
 				SetMaterial(2, prog);
 				
@@ -1525,6 +1520,8 @@ public:
 				M->translate(vec3(16.0, 2.0, -1.9));
 				
 				M->rotate(radians(-90.f), vec3(0, 1, 0));
+
+				M->scale(3.f);
 				
 				SetMaterial(0, prog);
 				
@@ -1563,11 +1560,6 @@ public:
 
 	bool CheckCollision(GameObject &one, GameObject &two) // AABB - Circle collision
 	{
-
-		//cout << "ball x: " << one.Position.x << endl << endl;
-		//cout << "ball y: " << one.Position.y << endl << endl;
-		//cout << "ball z: " << one.Position.z << endl << endl;
-
 	    float dx = one.Position.x - two.Position.x;
 		float dy = one.Position.y - two.Position.y;
 		float dz = one.Position.z - two.Position.z;
