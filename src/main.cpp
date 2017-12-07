@@ -113,6 +113,7 @@ public:
 	shared_ptr<Shape> dummy;
 	shared_ptr<Shape> dummyRightFoot;
 	shared_ptr<Shape> cabin;
+	shared_ptr<Shape> exclamationPoint;
 
 	//ground plane info
 	GLuint GrndBuffObj, GrndNorBuffObj, GrndTexBuffObj, GIndxBuffObj;
@@ -574,7 +575,7 @@ public:
 
 			//cout << "Gold Goal Center: " << GoldGoal->Position.x << ", " << GoldGoal->Position.y << ", " << GoldGoal->Position.z << endl << endl; 
 
-			GoldGoal->Radius = 3.f;
+			GoldGoal->Radius = 1.f;
 
 			vec3 blueGoalCenter = vec3(16.0, .4, -1.9);
 
@@ -584,7 +585,7 @@ public:
 
 		    //cout << "Gold Goal Center: " << BlueGoal->Position.x << ", " << BlueGoal->Position.y << ", " << BlueGoal->Position.z << endl << endl; 
 
-			BlueGoal->Radius = 3.f;
+			BlueGoal->Radius = 1.f;
 		}
 
 		//load in the mesh and make the shapes
@@ -721,6 +722,15 @@ public:
 		Foot->Position.z -= 1;
 
 		Foot->Radius = (gDummyScale * (dummyRightFoot->max.x - dummyRightFoot->min.x)); 
+
+		// now read in the sphere for the world
+		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr,
+						(resourceDirectory + "/exclamationPoint.obj").c_str());
+
+		exclamationPoint = make_shared<Shape>();
+		exclamationPoint->createShape(TOshapes[0]);
+		exclamationPoint->measure();
+		exclamationPoint->init();
 
 		// Initialize the geometry to render a ground plane
 		initQuad();
@@ -1455,19 +1465,79 @@ public:
 			renderCubeMap();
 		texProg2->unbind();
 
-		P->popMatrix();
-
 		bool goldGoalCollison = CheckCollision(*Ball, *GoldGoal);
 		bool blueGoalCollison = CheckCollision(*Ball, *BlueGoal);
 
-		if (goldGoalCollison) {
-			cout << "Gold Goal Collision" << endl << endl;
-		}
+		// Draw exclamation point
+		prog->bind();
+			glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix()));
 
-		if (blueGoalCollison) {
-			cout << "Blue Goal Collision" << endl << endl;
-		}
+			// View matrix for the camera
+		   	V->pushMatrix();
+			   	V->loadIdentity();
 
+			   	V->lookAt(eyeVector, lookAtVector, upVector);
+
+			   	glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(V->topMatrix()));
+			V->popMatrix();
+
+			M->pushMatrix();
+
+				M->loadIdentity();
+
+				M->rotate(radians(cTheta), vec3(0, 1, 0));
+
+				M->translate(vec3(-6.0, 2.0, -1.9));
+				
+				M->rotate(radians(-90.f), vec3(0, 1, 0));
+				
+				SetMaterial(2, prog);
+				
+				glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE,value_ptr(M->topMatrix()));
+
+				if (goldGoalCollison) {
+					exclamationPoint->draw(prog);
+				}
+
+			M->popMatrix();
+		prog->unbind();
+
+		// Draw exclamation point
+		prog->bind();
+
+			glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix()));
+
+			// View matrix for the camera
+		   	V->pushMatrix();
+			   	V->loadIdentity();
+
+			   	V->lookAt(eyeVector, lookAtVector, upVector);
+
+			   	glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(V->topMatrix()));
+			V->popMatrix();
+
+			M->pushMatrix();
+
+				M->loadIdentity();
+
+				M->rotate(radians(cTheta), vec3(0, 1, 0));
+
+				M->translate(vec3(16.0, 2.0, -1.9));
+				
+				M->rotate(radians(-90.f), vec3(0, 1, 0));
+				
+				SetMaterial(0, prog);
+				
+				glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE,value_ptr(M->topMatrix()));
+
+				if (blueGoalCollison) {
+					exclamationPoint->draw(prog);
+				}
+
+			M->popMatrix();
+		prog->unbind();
+
+		P->popMatrix();
 
 		if (dummyMoving) {
 			if (limbRot > 20) {
